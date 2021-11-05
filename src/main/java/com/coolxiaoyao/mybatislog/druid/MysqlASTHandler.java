@@ -1,4 +1,4 @@
-package com.coolxiaoyao.mybatislog.visitor;
+package com.coolxiaoyao.mybatislog.druid;
 
 import com.alibaba.druid.sql.ast.SQLExpr;
 import com.alibaba.druid.sql.ast.SQLObject;
@@ -6,8 +6,8 @@ import com.alibaba.druid.sql.ast.expr.*;
 import com.alibaba.druid.sql.ast.statement.SQLSelectQuery;
 import com.alibaba.druid.sql.ast.statement.SQLSelectQueryBlock;
 import com.coolxiaoyao.mybatislog.type.ParamItem;
-import com.coolxiaoyao.mybatislog.util.ExprUtil;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -16,13 +16,29 @@ import java.util.List;
 
 
 class MysqlASTHandler extends AbstractASTHandler {
+
+    /**
+     * 兼容性
+     */
     private final List<ParamItem> params;
+    /**
+     * 兼容性
+     */
     private int paramIndex = 0;
 
-    public MysqlASTHandler(List<ParamItem> params) {
-        this.params = params;
-    }
 
+    /**
+     * 兼容性
+     *
+     * @param params
+     */
+    public MysqlASTHandler(List<ParamItem> params) {
+        if (params == null) {
+            this.params = Collections.emptyList();
+        } else {
+            this.params = params;
+        }
+    }
 
     @Override
     public void handle(SQLObject sqlObject) {
@@ -72,35 +88,19 @@ class MysqlASTHandler extends AbstractASTHandler {
     /**
      * 获取当前参数 Expr 返回一个新的 SQLExpr
      *
-     * @param refExprName 这里统一为 ?
+     * @param variantRefExpr
      * @return
      */
     @Override
-    public SQLExpr getParameterValueExpr(String refExprName) {
-        SQLExpr newExpr;
+    public SQLExpr getParameterValueExpr(SQLVariantRefExpr variantRefExpr) {
         if (paramIndex >= params.size()) {
-            newExpr = new SQLNullExpr();
+            // 超出的应该不解析
+            // newExpr = new SQLNullExpr();
+            return null;
         } else {
-            ParamItem paramItem = params.get(paramIndex++);
-            if (paramItem.getValue() == null) {
-                newExpr = new SQLNullExpr();
-            } else {
-                newExpr = ExprUtil.getExpr(paramItem.getValue(), paramItem.getCls());
-            }
+            ParamItem paramItem = params.get(paramIndex);
+            paramIndex++;
+            return DruidVariantRefExprUtil.createNewExpr(variantRefExpr, paramItem);
         }
-        return newExpr;
-    }
-
-
-    /**
-     * 返回必须不能为空
-     *
-     * @param refExprName
-     * @return
-     */
-    @Override
-    public String getIdentifierValue(String refExprName) {
-        ParamItem paramItem = params.get(paramIndex++);
-        return paramItem.getValue().toString();
     }
 }

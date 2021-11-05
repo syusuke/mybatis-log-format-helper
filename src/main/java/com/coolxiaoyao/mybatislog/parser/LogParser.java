@@ -11,6 +11,11 @@ import java.util.List;
 
 public interface LogParser {
 
+
+    default String parser(String sql, List<ParamItem> params) {
+        return parser(sql, params, null);
+    }
+
     /**
      * parser
      *

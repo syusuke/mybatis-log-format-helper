@@ -1,15 +1,13 @@
-package com.coolxiaoyao.mybatislog.visitor;
+package com.coolxiaoyao.mybatislog.druid;
 
 import com.alibaba.druid.sql.ast.SQLExpr;
 import com.alibaba.druid.sql.ast.SQLLimit;
 import com.alibaba.druid.sql.ast.SQLObject;
 import com.alibaba.druid.sql.ast.SQLOrderBy;
-import com.alibaba.druid.sql.ast.expr.SQLBinaryOpExpr;
-import com.alibaba.druid.sql.ast.expr.SQLIdentifierExpr;
-import com.alibaba.druid.sql.ast.expr.SQLInListExpr;
 import com.alibaba.druid.sql.ast.expr.SQLVariantRefExpr;
 import com.alibaba.druid.sql.ast.statement.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -17,7 +15,9 @@ import java.util.List;
  */
 
 
-public abstract class AbstractASTHandler {
+abstract class AbstractASTHandler implements IVisitorResultRef<SQLVariantRefExpr> {
+
+    private final List<SQLVariantRefExpr> variantRefExprList = new ArrayList<>();
 
 
     public void handleSQLInsertStatement(SQLInsertStatement sqlInsertStatement) {
@@ -105,7 +105,11 @@ public abstract class AbstractASTHandler {
         }
     }
 
-
+    /**
+     * TODO 存储过程
+     *
+     * @param sqlCallStatement
+     */
     public void handleSQLCallStatement(SQLCallStatement sqlCallStatement) {
         List<SQLExpr> parameters = sqlCallStatement.getParameters();
         for (SQLExpr parameter : parameters) {
@@ -141,9 +145,14 @@ public abstract class AbstractASTHandler {
     public void handleSQLExprTableSource(SQLExprTableSource exprTableSource) {
         SQLExpr expr = exprTableSource.getExpr();
         if (expr instanceof SQLVariantRefExpr) {
-            SQLVariantRefExpr variantRefExpr = (SQLVariantRefExpr) expr;
-            SQLIdentifierExpr sqlIdentifierExpr = new SQLIdentifierExpr(getIdentifierValue(variantRefExpr.getName()));
-            exprTableSource.setExpr(sqlIdentifierExpr);
+            //TODO 要测试过才知道
+            /*if (isReplaceParam()) {
+                SQLVariantRefExpr variantRefExpr = (SQLVariantRefExpr) expr;
+                SQLExpr sqlIdentifierExpr = getParameterValueExpr(variantRefExpr.getName(), true);
+                exprTableSource.setExpr(sqlIdentifierExpr);
+            }*/
+            // OR 下面的方式
+            replaceVariantRefExprValue((SQLVariantRefExpr) expr);
         }
     }
 
@@ -154,40 +163,27 @@ public abstract class AbstractASTHandler {
      * @param variantRefExpr
      */
     protected void replaceVariantRefExprValue(SQLVariantRefExpr variantRefExpr) {
+        variantRefExprList.add(variantRefExpr);
         // 参数就是名,一般为 ?
-        String refExprName = variantRefExpr.getName();
-        SQLExpr newExpr = getParameterValueExpr(refExprName);
-        SQLObject parentObject = variantRefExpr.getParent();
-        if (parentObject instanceof SQLBinaryOpExpr) {
-            // 一般的 name = ?
-            SQLBinaryOpExpr parent = (SQLBinaryOpExpr) parentObject;
-            parent.replace(variantRefExpr, newExpr);
-        } else if (parentObject instanceof SQLInListExpr) {
-            // id in (?,?)
-            SQLInListExpr parent = (SQLInListExpr) parentObject;
-            parent.replace(variantRefExpr, newExpr);
-        } else if (parentObject instanceof SQLInsertStatement.ValuesClause) {
-            // 插入
-            SQLInsertStatement.ValuesClause vc = (SQLInsertStatement.ValuesClause) parentObject;
-            vc.replace(variantRefExpr, newExpr);
-        } else if (parentObject instanceof SQLUpdateSetItem) {
-            // 更新
-            SQLUpdateSetItem updateSetItem = (SQLUpdateSetItem) parentObject;
-            updateSetItem.setValue(newExpr);
+        SQLExpr newExpr = getParameterValueExpr(variantRefExpr);
+        if (newExpr != null) {
+            DruidVariantRefExprUtil.replaceVariantRefExprValue(variantRefExpr, newExpr);
         }
     }
 
-
     public abstract void handle(SQLObject sqlObject);
 
-    public abstract SQLExpr getParameterValueExpr(String refExprName);
-
     /**
-     * 返回必须不能为空
+     * 获取当前参数 Expr 返回一个新的 SQLExpr,要 isReplaceParam() 返回true
      *
-     * @param refExprName
+     * @param variantRefExpr
      * @return
      */
-    public abstract String getIdentifierValue(String refExprName);
+    public abstract SQLExpr getParameterValueExpr(SQLVariantRefExpr variantRefExpr);
 
+
+    @Override
+    public List<SQLVariantRefExpr> getRefs() {
+        return this.variantRefExprList;
+    }
 }

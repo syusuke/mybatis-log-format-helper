@@ -1,4 +1,4 @@
-package com.coolxiaoyao.mybatislog.visitor;
+package com.coolxiaoyao.mybatislog.druid;
 
 import com.alibaba.druid.sql.ast.statement.SQLCallStatement;
 import com.alibaba.druid.sql.dialect.mysql.ast.statement.MySqlDeleteStatement;
@@ -6,9 +6,6 @@ import com.alibaba.druid.sql.dialect.mysql.ast.statement.MySqlInsertStatement;
 import com.alibaba.druid.sql.dialect.mysql.ast.statement.MySqlSelectQueryBlock;
 import com.alibaba.druid.sql.dialect.mysql.ast.statement.MySqlUpdateStatement;
 import com.alibaba.druid.sql.dialect.mysql.visitor.MySqlASTVisitorAdapter;
-import com.coolxiaoyao.mybatislog.type.ParamItem;
-
-import java.util.List;
 
 /**
  * @author kerryzhang on 2021/10/27
@@ -18,8 +15,8 @@ import java.util.List;
 public class MysqlASTVisitor extends MySqlASTVisitorAdapter {
     private final MysqlASTHandler handler;
 
-    public MysqlASTVisitor(List<ParamItem> params) {
-        this.handler = new MysqlASTHandler(params);
+    MysqlASTVisitor(MysqlASTHandler handler) {
+        this.handler = handler;
     }
 
     @Override
@@ -52,5 +49,4 @@ public class MysqlASTVisitor extends MySqlASTVisitorAdapter {
         handler.handleSQLCallStatement(x);
         return super.visit(x);
     }
-
 }

@@ -7,7 +7,13 @@ package com.coolxiaoyao.mybatislog;
 
 public enum DbType {
     /**
+     * default sql type mysql
+     */
+    DEFAULT,
+    /**
      * mysql
      */
-    MYSQL;
+    MYSQL,
+    ORACLE,
+    MS_SQL;
 }

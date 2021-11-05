@@ -1,4 +1,4 @@
-package com.coolxiaoyao.mybatislog.log;
+package com.coolxiaoyao.mybatislog;
 
 import com.coolxiaoyao.mybatislog.pair.SqlParamPair;
 import com.coolxiaoyao.mybatislog.type.ParamItem;
@@ -11,10 +11,12 @@ import java.util.regex.Pattern;
 
 /**
  * @author kerryzhang on 2021/10/27
+ * <p>
+ * 解析Log参数
  */
 
 
-public class LogResolve {
+public class LogResolveHelper {
 
     public static final String PREPARING = "Preparing: ";
     public static final String PARAMETERS = "Parameters: ";
