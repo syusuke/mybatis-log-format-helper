@@ -1,26 +1,35 @@
 package com.coolxiaoyao.mybatislog;
 
+import com.coolxiaoyao.mybatislog.pair.SqlParamPair;
+import com.coolxiaoyao.mybatislog.type.ParamItem;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
  * @author kerryzhang on 2021/10/27
  */
 
-class MybatisLogHelperTest {
+class MybatisLogHelper2Test {
 
+    private String resolveSql;
 
     @Test
     void testFormatSQL_simple_select() {
-        String resolveSql = "Preparing: select P.*, O.* from t_patient P,      t_outpat_register O where P.org_name = ?   and O.org_name = ?\n" +
+        resolveSql = "Preparing: select P.*, O.* from t_patient P,      t_outpat_register O where P.org_name = ?   and O.org_name = ?\n" +
                 "Parameters: LOVE(String), FUCE(String)\n";
-        List<String> sqls = MybatisLogHelper.formatLog(resolveSql, DbType.MYSQL);
+        List<SqlParamPair> sqlParamPairs = LogResolveHelper.resolveLog(resolveSql);
+        List<String> sqls = new ArrayList<>(sqlParamPairs.size());
+        for (SqlParamPair sqlParamPair : sqlParamPairs) {
+            List<ParamItem> paramItems = LogResolveHelper.resolveParams(sqlParamPair.getParam());
+            String s = MybatisLogHelper.formatSql(sqlParamPair.getSql(), paramItems, null);
+            sqls.add(s);
+        }
         for (String sql : sqls) {
             System.out.println("sql: " + sql);
             System.out.println("-------------------");
         }
-
     }
 
 

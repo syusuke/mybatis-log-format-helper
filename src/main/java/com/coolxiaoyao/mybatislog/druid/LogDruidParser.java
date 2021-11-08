@@ -20,10 +20,15 @@ public class LogDruidParser implements LogParser {
         DbType type = DbType.of(dbType);
         List<SQLStatement> sqlStatements = SQLUtils.parseStatements(sql, type);
         SQLStatement sqlStatement = sqlStatements.get(0);
-        // if (type == DbType.mysql) {
-        MysqlASTHandler handler = new MysqlASTHandler(params);
-        sqlStatement.accept(new MysqlASTVisitor(handler));
-        //}
+
+        ASTVisitor visitor;
+        if (DbType.mysql == type || DbType.mariadb == type) {
+            visitor = new MysqlASTVisitor(new MysqlASTHandler(params));
+        } else {
+            // default
+            visitor = new ASTVisitor(new ASTHandler(params));
+        }
+        sqlStatement.accept(visitor);
         return sqlStatement.toString();
     }
 }
